@@ -1,6 +1,7 @@
-import { ChangeEvent, FC, useState } from "react";
+import { ChangeEvent, FC, useEffect, useState } from "react";
 import { GetServerSideProps } from "next";
 import {
+  Button,
   Card,
   CardContent,
   FormControl,
@@ -10,12 +11,17 @@ import {
   RadioGroup,
 } from "@mui/material";
 import Cookies from "js-cookie";
+import axios from "axios";
 
 import { Layout } from "../components/layouts";
 
-const ThemeChangerPage: FC = (props) => {
-  console.log({ props });
-  const [currentTheme, setCurrentTheme] = useState("light");
+interface Props {
+  theme: string;
+}
+
+const ThemeChangerPage: FC<Props> = ({ theme }) => {
+  console.log({ theme });
+  const [currentTheme, setCurrentTheme] = useState(theme);
 
   const onThemeChange = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedTheme = event.target.value;
@@ -23,6 +29,14 @@ const ThemeChangerPage: FC = (props) => {
     localStorage.setItem("theme", selectedTheme);
     Cookies.set("theme", selectedTheme);
   };
+
+  const onClick = async () => {
+    const { data } = await axios.get("/api/hello");
+    console.log({ data });
+  };
+  useEffect(() => {
+    console.log("Cookies", Cookies.get("theme"));
+  }, []);
 
   return (
     <Layout>
@@ -44,6 +58,8 @@ const ThemeChangerPage: FC = (props) => {
               />
             </RadioGroup>
           </FormControl>
+
+          <Button onClick={onClick}>Request</Button>
         </CardContent>
       </Card>
     </Layout>
@@ -56,9 +72,11 @@ const ThemeChangerPage: FC = (props) => {
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   const { theme = "light" } = req.cookies;
 
+  const validTheme = ["light", "dark", "custom"];
+
   return {
     props: {
-      theme,
+      theme: validTheme.includes(theme) ? theme : "dark",
     },
   };
 };
